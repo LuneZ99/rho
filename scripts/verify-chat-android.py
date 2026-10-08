@@ -69,7 +69,8 @@ try:
     adb('shell','svc','wifi','enable');adb('shell','svc','data','enable');time.sleep(4)
     tap('刷新列表');wait('可用模型 ·')
     adb('shell','settings','put','system','font_scale','1.3');time.sleep(4)
-    open_page('models');wait('可用模型 ·');shot('models-large-font')
+    open_page('settings');tap('LLM 模型');wait('新对话默认模型');wait('可用模型 ·');time.sleep(2);shot('models-large-font')
+    adb('shell','input','keyevent','4');wait('LLM 模型')
     open_page('chat/'+cid);wait(target);shot('chat-large-font')
     print('PASS: real model list, search/empty, per-chat save, keyboard, offline recovery, font 1.3')
 finally:

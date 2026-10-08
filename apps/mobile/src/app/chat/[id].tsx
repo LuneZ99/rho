@@ -7,6 +7,7 @@ import {
   Alert,
   Pressable,
   ActivityIndicator,
+  type NativeScrollEvent,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Stack, router, useLocalSearchParams } from "expo-router";
@@ -39,11 +40,39 @@ export default function Chat() {
   const headerHeight = useHeaderHeight();
   const atBottom = useRef(true);
   const dragging = useRef(false);
+  const contentHeight = useRef(0),
+    viewportHeight = useRef(0);
+  const scrollFrame = useRef<number | null>(null);
+  function scrollToLatest() {
+    if (scrollFrame.current !== null) cancelAnimationFrame(scrollFrame.current);
+    scrollFrame.current = requestAnimationFrame(() => {
+      scrollFrame.current = null;
+      if (atBottom.current)
+        list.current?.scrollToOffset({
+          offset: Math.max(0, contentHeight.current - viewportHeight.current),
+          animated: false,
+        });
+    });
+  }
+  useEffect(
+    () => () => {
+      if (scrollFrame.current !== null)
+        cancelAnimationFrame(scrollFrame.current);
+    },
+    [],
+  );
+  function trackScroll(e: NativeScrollEvent) {
+    const bottom =
+      e.contentSize.height - e.layoutMeasurement.height - e.contentOffset.y <
+      40;
+    atBottom.current = bottom;
+    setShowLatest(!bottom);
+  }
   const [showLatest, setShowLatest] = useState(false);
   function latest() {
     atBottom.current = true;
     setShowLatest(false);
-    list.current?.scrollToEnd({ animated: false });
+    scrollToLatest();
   }
   useEffect(() => {
     atBottom.current = true;
@@ -174,32 +203,27 @@ export default function Chat() {
         onScrollBeginDrag={() => {
           dragging.current = true;
         }}
-        onScrollEndDrag={() => {
+        onScrollEndDrag={({ nativeEvent }) => {
+          trackScroll(nativeEvent);
           dragging.current = false;
         }}
         onMomentumScrollBegin={() => {
           dragging.current = true;
         }}
-        onMomentumScrollEnd={() => {
+        onMomentumScrollEnd={({ nativeEvent }) => {
+          trackScroll(nativeEvent);
           dragging.current = false;
         }}
-        onScroll={({ nativeEvent: e }) => {
-          // Layout and token updates also emit scroll events. Only a user's
-          // scroll changes follow mode, otherwise initial layout can cancel it.
-          if (!dragging.current) return;
-          const bottom =
-            e.contentSize.height -
-              e.layoutMeasurement.height -
-              e.contentOffset.y <
-            80;
-          atBottom.current = bottom;
-          setShowLatest(!bottom);
+        onScroll={({ nativeEvent }) => {
+          if (dragging.current) trackScroll(nativeEvent);
         }}
-        onLayout={() => {
-          if (atBottom.current) list.current?.scrollToEnd({ animated: false });
+        onLayout={({ nativeEvent }) => {
+          viewportHeight.current = nativeEvent.layout.height;
+          if (atBottom.current) scrollToLatest();
         }}
-        onContentSizeChange={() => {
-          if (atBottom.current) list.current?.scrollToEnd({ animated: false });
+        onContentSizeChange={(_width, height) => {
+          contentHeight.current = height;
+          if (atBottom.current) scrollToLatest();
         }}
         ListHeaderComponent={<Status />}
         ListEmptyComponent={
