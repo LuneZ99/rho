@@ -1,0 +1,24 @@
+{
+  "name": "@rho/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "worker": "tsx src/worker.ts",
+    "typecheck": "tsc",
+    "test": "tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "1.0.2",
+    "@rho/shared": "*",
+    "@sinclair/typebox": "^0.34.0",
+    "fastify": "^5.6.0",
+    "pg": "^8.16.0",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.0"
+  }
+}

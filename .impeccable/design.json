@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-04T10:02:43.263722+00:00",
+  "title": "rho 设计约定",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "深绿背景"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "卡片表面"
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "抬高表面"
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "明亮正文"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "辅助文字"
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "浅绿强调"
+      },
+      "onAccent": {
+        "role": "neutral",
+        "displayName": "强调面文字"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "分隔线"
+      },
+      "error": {
+        "role": "error",
+        "displayName": "错误提示"
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "标题",
+        "purpose": "页面强调句与卡片、记录标题。"
+      },
+      "body": {
+        "displayName": "正文",
+        "purpose": "主要内容；按钮改用 Medium。"
+      },
+      "label": {
+        "displayName": "说明",
+        "purpose": "日期、模块和处理状态。"
+      },
+      "tab": {
+        "displayName": "底部标签",
+        "purpose": "底部三个入口。"
+      }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "主按钮",
+      "kind": "button",
+      "description": "Android 原生 Pressable；最小高度 48dp，按下与禁用透明度 0.55；加载时停用点击。",
+      "refersTo": "button-primary"
+    },
+    {
+      "name": "次按钮",
+      "kind": "button",
+      "description": "复用按钮组件，应用次按钮表面与强调文字。",
+      "refersTo": "button-secondary"
+    },
+    {
+      "name": "内容卡片",
+      "kind": "card",
+      "description": "原生 View 容器；内部主要内容间距使用 spacing.md，无阴影。",
+      "refersTo": "panel"
+    },
+    {
+      "name": "文本输入",
+      "kind": "input",
+      "description": "原生 TextInput；最小高度 52dp、1dp 描边；系统输入与选择行为。",
+      "refersTo": "input"
+    },
+    {
+      "name": "底部导航",
+      "kind": "nav",
+      "description": "Expo Router Tabs：图标配文字，按安全区与系统字体倍率增高。"
+    },
+    {
+      "name": "模块选择",
+      "kind": "custom",
+      "description": "复用按钮的两种配色，原生 accessibilityState.selected 与当前模块一致。"
+    }
+  ],
+  "narrative": {
+    "northStar": "让日常值得关注的事清楚可见",
+    "overview": "深色常青绿界面，以 MiSans 和舒展卡片承载日常记录与可执行操作。保持 Android 原生导航和操作习惯；本轮不加入装饰动画。首页突出关注事项，模块历史采用列表，产品行为以 [产品需求](docs/product.md) 为准。\n\n状态：首个 demo 已实现，MiSans 已随 APK 接入；Android 11 / API 30 模拟器已检查界面、软键盘、1.3 倍系统字体与模块选中状态。索尼 XQ-AT72 真机尚未验证，不代表用户验收。截图、安装包及验证边界见 [验证记录](docs/engineering/verification.md)。",
+    "keyCharacteristics": [
+      "深绿背景、浅绿操作强调、明亮正文。",
+      "同一字体家族，以字号、字重和留白区分层级。",
+      "卡片舒展、历史列表清楚，操作随大字体自然换行。"
+    ],
+    "rules": [
+      {
+        "name": "状态可辨",
+        "body": "选中模块同时使用主按钮配色与原生无障碍选中状态，不能只靠颜色表达。",
+        "section": "colors"
+      },
+      {
+        "name": "单一字体",
+        "body": "保持同一字体家族，不默认搭配衬线装饰字体，不用细字重承载主要内容。",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "**Do** 复用主题和共享组件，保留深绿底色、MiSans 与舒展卡片。",
+      "**Do** 保持操作触控区域至少 48dp，并检查大字体、长内容和键盘下的操作可达性。",
+      "**Do** 在目标 Android 手机上验证中文、英文、金额、日期和长段内容；模拟器通过不代替真机验收。"
+    ],
+    "donts": [
+      "**Don't** 擅自更换已确认字体、改为紧凑卡片或改变产品行为。",
+      "**Don't** 添加装饰动画、装饰字体或无内容意义的小标题。",
+      "**Don't** 用固定高度裁切主要文字，或把截断摘要当成完整详情。"
+    ]
+  }
+}

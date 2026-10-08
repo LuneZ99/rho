@@ -1,0 +1,9 @@
+.git
+.agents
+node_modules
+.env*
+.local
+.build
+artifacts
+apps/mobile/android
+apps/mobile/.expo

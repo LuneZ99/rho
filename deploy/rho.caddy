@@ -1,0 +1,7 @@
+# 插入现有 *.sh.corgi.plus 站点的默认 handle 前。
+@rho host rho.sh.corgi.plus
+handle @rho {
+    reverse_proxy 100.80.0.189:18870 {
+        flush_interval -1
+    }
+}

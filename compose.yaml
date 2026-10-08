@@ -1,0 +1,54 @@
+name: rho
+x-app: &app
+  build:
+    context: .
+    dockerfile: deploy/Dockerfile
+  restart: unless-stopped
+  init: true
+  environment: &env
+    DATABASE_URL: postgresql://rho:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/rho
+    RHO_ACCESS_TOKEN: ${RHO_ACCESS_TOKEN:?Set RHO_ACCESS_TOKEN}
+    LITELLM_API_KEY: ${LITELLM_API_KEY:-}
+    LITELLM_BASE_URL: ${LITELLM_BASE_URL:-https://litellm.sh.corgi.plus/v1}
+    LITELLM_MODEL: ${LITELLM_MODEL:-prod-max-1m}
+    AGENT_DATA_DIR: /data/agent
+  depends_on:
+    db:
+      condition: service_healthy
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  mem_limit: 1g
+services:
+  db:
+    image: postgres:17.7-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rho
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: rho
+    volumes: [database:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U rho]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    mem_limit: 512m
+  api:
+    <<: *app
+    environment:
+      <<: *env
+      RHO_DOWNLOADS_DIR: /downloads
+    volumes: [./artifacts:/downloads:ro]
+    ports: ["${RHO_BIND_IP:-127.0.0.1}:18870:18870"]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:18870/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+  worker:
+    <<: *app
+    command: [npm, run, worker, -w, '@rho/server']
+    volumes: [agent:/data/agent]
+volumes:
+  database:
+  agent:

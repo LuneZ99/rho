@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "rho",
+    "slug": "rho",
+    "scheme": "rho",
+    "version": "0.1.1",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "plus.corgi.rho",
+      "versionCode": 2,
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-font",
+      "expo-system-ui",
+      "expo-status-bar",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#101714",
+          "android": {
+            "drawable": {
+              "icon": "./assets/splash.xml"
+            }
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildToolsVersion": "36.0.0"
+          }
+        }
+      ],
+      "./plugins/with-system-bars.cjs"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

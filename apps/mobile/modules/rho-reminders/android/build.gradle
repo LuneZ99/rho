@@ -1,0 +1,8 @@
+apply plugin: 'com.android.library'
+apply plugin: 'expo-module-gradle-plugin'
+group = 'plus.corgi.rho.reminders'
+version = '0.1.0'
+android {
+  namespace 'plus.corgi.rho.reminders'
+  defaultConfig { versionCode 1; versionName '0.1.0' }
+}

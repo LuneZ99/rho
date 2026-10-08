@@ -1,0 +1,13 @@
+allprojects { p ->
+  p.afterEvaluate {
+    if (p.plugins.hasPlugin('com.android.application')) {
+      def password = new File('/app/.local/signing.password').text.trim()
+      def config = p.android.signingConfigs.maybeCreate('rhoRelease')
+      config.storeFile = new File('/app/.local/rho-release.keystore')
+      config.storePassword = password
+      config.keyAlias = 'rho'
+      config.keyPassword = password
+      p.android.buildTypes.release.signingConfig = config
+    }
+  }
+}
