@@ -10,6 +10,7 @@ output = root / 'apps/server/public/fonts'
 output.mkdir(parents=True, exist_ok=True)
 # 包含指南内容及网页固定文案；移动端仍使用完整的官方原始字体。
 text = ''.join((root / p).read_text() for p in ['packages/shared/src/guide.ts', 'apps/server/src/guide.ts'])
+text += ''.join(p.read_text() for p in (root / 'releases').glob('*.md'))
 text += ''.join(chr(i) for i in range(32, 127))
 for weight in ['Regular', 'Medium']:
     options = subset.Options()

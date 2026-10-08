@@ -5,6 +5,9 @@ import { fileURLToPath } from "node:url";
 import type { FastifyInstance } from "fastify";
 import { demoUrl, guideIntro, guideSections } from "@rho/shared/guide";
 
+import { releasePath, type Release } from "@rho/shared/releases";
+import { readReleaseCatalog } from "./releases.js";
+
 const fonts = fileURLToPath(new URL("../public/fonts/", import.meta.url));
 const assets = {
   "/downloads/rho-demo.apk": [
@@ -37,9 +40,9 @@ const escape = (s: string) =>
       ]!,
   );
 
-export function guideHtml() {
+export function guideHtml(releases: Release[] = [], releaseError = false) {
   return `<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101823"><meta name="robots" content="noindex,nofollow"><title>rho · 试用指南</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101823"><meta name="robots" content="noindex,nofollow"><title>rho · 版本下载与试用指南</title>
 <style>
 @font-face{font-family:MiSans;src:url('/guide/fonts/MiSans-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
 @font-face{font-family:MiSans;src:url('/guide/fonts/MiSans-Medium.woff2') format('woff2');font-weight:500 800;font-display:swap}
@@ -48,11 +51,17 @@ export function guideHtml() {
 main{max-width:760px;margin:auto;padding:40px 24px 64px}h1{font-size:32px;line-height:1.3;margin:0 0 16px;font-weight:500}h2{font-size:24px;line-height:1.4;font-weight:500;margin:0 0 12px}h3{font-size:20px;line-height:1.5;font-weight:500;margin:28px 0 12px}p{margin:12px 0}a{color:var(--accent);text-underline-offset:.22em}a:focus-visible{outline:2px solid var(--accent);outline-offset:5px}a:hover{text-decoration-thickness:2px}a:active{opacity:.7}::selection{background:var(--accent);color:var(--on-accent)}
 .muted,.expected{color:var(--muted)}.actions{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}.button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:10px 20px;border-radius:12px;text-decoration:none;font-weight:500;background:var(--accent);color:var(--on-accent)}.button.secondary{background:var(--raised);color:var(--accent)}.button:hover{filter:brightness(1.08)}
 nav{margin:32px 0;display:grid;gap:0}nav a{padding:14px 0;border-bottom:1px solid var(--line)}section{margin-top:40px;padding-top:32px;border-top:1px solid var(--line);scroll-margin-top:24px}.expected{padding:16px 20px;border-radius:16px;background:var(--surface)}footer{margin-top:40px;padding-top:24px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}.address{user-select:all;font-variant-numeric:tabular-nums}
+.release{padding:24px 0;border-bottom:1px solid var(--line)}.release h3{margin:0 0 8px}.release .actions{margin:16px 0 0}.release-notes{white-space:pre-line}.release-meta{font-variant-numeric:tabular-nums}.release-checksum{font-size:13px}.release-checksum summary{cursor:pointer;min-height:48px;display:flex;align-items:center;color:var(--accent)}.release-checksum code{display:block;overflow-wrap:anywhere;user-select:all;color:var(--muted)}
 @media(max-width:480px){main{padding:28px 20px 48px}h1{font-size:28px}.actions{flex-direction:column;align-items:stretch}}
 </style></head><body><main id="top">
-<h1>rho 试用指南</h1><p class="muted">${escape(guideIntro)}</p>
-<div class="actions"><a class="button" href="/downloads/rho-demo.apk" download="rho-demo.apk">下载 Android 安装包</a><a class="button secondary" href="rho:///guide">在 rho 中打开指南</a></div>
+<h1>rho 版本与试用指南</h1><p class="muted">${escape(guideIntro)}</p>
+<div class="actions"><a class="button" href="/downloads/rho-demo.apk" download="rho-demo.apk">下载最新 Android 版</a><a class="button secondary" href="#releases">查看全部版本</a><a class="button secondary" href="rho:///guide">在 rho 中打开指南</a></div>
 <p class="muted">安装后：右上角设置 → 试用指南与资料。已安装旧版时，直接覆盖更新即可。</p>
+<section id="releases" aria-labelledby="releases-title"><h2 id="releases-title">发布版本</h2>
+<p class="muted">从新到旧保留各版安装包。点击下载，再从手机浏览器的下载列表打开安装。</p>
+<p class="muted">新版可覆盖更新；历史旧版通常不能直接覆盖新版，请用备用设备测试。卸载会清除手机本地数据和未同步内容。</p>
+${releaseError ? '<p role="alert">暂时无法读取发布列表，请稍后刷新页面重试。</p><p><a href="/">重新加载发布列表</a></p>' : releases.length === 0 ? '<p class="muted">暂无发布版本，安装包发布后会显示在这里。</p>' : releases.map((r, i) => `<article class="release"><h3>${escape(r.version)}</h3><p class="muted release-meta">${r.version.includes("-test.") ? "测试版" : "发布版"}${i === 0 ? " · 最新发布" : ""} · ${new Date(r.publishedAt).toLocaleDateString("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" })} · ${(r.size / 1024 / 1024).toFixed(1)} MB</p><p class="release-notes">${escape(r.notes)}</p><div class="actions"><a class="button${i === 0 ? "" : " secondary"}" href="${releasePath(r.version)}" download="rho-${escape(r.version)}.apk" aria-label="下载 ${escape(r.version)} APK">下载 APK</a></div><details class="release-checksum"><summary>查看 SHA-256 校验值</summary><code>${escape(r.sha256)}</code></details></article>`).join("")}
+</section>
 <nav aria-label="指南目录">${guideSections.map((s) => `<a href="#${s.id}">${escape(s.title)}</a>`).join("")}</nav>
 ${guideSections.map((s) => `<section id="${s.id}" aria-labelledby="heading-${s.id}"><h2 id="heading-${s.id}">${escape(s.title)}</h2>${s.id === "connection" ? `<p>服务地址：<span class="address">${escape(demoUrl)}</span></p>` : ""}${s.entries.map((e) => `<article><h3>${escape(e.title)}</h3>${e.paragraphs.map((p) => `<p>${escape(p)}</p>`).join("")}${"expected" in e ? `<p class="expected">预期结果：${escape(e.expected)}</p>` : ""}</article>`).join("")}<p><a href="#top">返回目录</a></p></section>`).join("")}
 <footer>rho · 第一个 demo · 指南更新于 2026-10-04<br><a href="/downloads/rho-demo.apk.sha256">安装包校验值</a> · <a href="/guide/fonts/LICENSE.pdf">MiSans 字体许可</a></footer>
@@ -61,8 +70,16 @@ ${guideSections.map((s) => `<section id="${s.id}" aria-labelledby="heading-${s.i
 
 export function registerGuide(app: FastifyInstance) {
   for (const path of ["/", "/guide", "/guide/"])
-    app.get(path, async (_req, reply) =>
-      reply
+    app.get(path, async (req, reply) => {
+      let releases: Release[] = [];
+      let releaseError = false;
+      try {
+        releases = await readReleaseCatalog();
+      } catch (error) {
+        releaseError = true;
+        req.log.error({ err: error }, "release_catalog_failed");
+      }
+      return reply
         .header(
           "Content-Security-Policy",
           "default-src 'none'; style-src 'unsafe-inline'; font-src 'self'; base-uri 'none'; frame-ancestors 'none'",
@@ -71,8 +88,8 @@ export function registerGuide(app: FastifyInstance) {
         .header("X-Content-Type-Options", "nosniff")
         .header("Cache-Control", "no-cache")
         .type("text/html; charset=utf-8")
-        .send(guideHtml()),
-    );
+        .send(guideHtml(releases, releaseError));
+    });
 
   for (const [path, [file, type]] of Object.entries(assets))
     app.get(path, async (_req, reply) => {

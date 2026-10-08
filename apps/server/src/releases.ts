@@ -15,30 +15,28 @@ export function isPublicReleaseRequest(method: string, url: string) {
     (path === "/releases.json" || releaseDownloadPattern.test(path))
   );
 }
-export function registerReleases(app: FastifyInstance) {
-  const directory = () =>
-    resolve(process.env.RHO_DOWNLOADS_DIR ?? "../../artifacts", "releases");
-  async function catalog() {
-    try {
-      return releaseCatalogSchema
-        .parse(
-          JSON.parse(
-            await readFile(resolve(directory(), "index.json"), "utf8"),
-          ),
-        )
-        .sort((a, b) => b.versionCode - a.versionCode);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
-      throw error;
-    }
+const directory = () =>
+  resolve(process.env.RHO_DOWNLOADS_DIR ?? "../../artifacts", "releases");
+export async function readReleaseCatalog() {
+  try {
+    return releaseCatalogSchema
+      .parse(
+        JSON.parse(await readFile(resolve(directory(), "index.json"), "utf8")),
+      )
+      .sort((a, b) => b.versionCode - a.versionCode);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
   }
+}
+export function registerReleases(app: FastifyInstance) {
   app.get("/releases.json", async (_req, reply) => {
     reply.header("Cache-Control", "no-store");
-    return catalog();
+    return readReleaseCatalog();
   });
   app.get("/downloads/releases/:filename", async (req, reply) => {
     const path = req.url.split("?")[0];
-    const release = (await catalog()).find(
+    const release = (await readReleaseCatalog()).find(
       (r) => releasePath(r.version) === path,
     );
     if (!release) return reply.code(404).send({ error: "此版本尚未提供下载" });
