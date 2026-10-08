@@ -16,3 +16,5 @@ apps/mobile/dist/
 *.jks
 
 .impeccable/review/
+
+__pycache__/

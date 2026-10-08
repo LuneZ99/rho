@@ -6,10 +6,11 @@
     "packages/*"
   ],
   "scripts": {
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p scripts/tsconfig.json",
     "test": "npm run test -w @rho/server",
     "android:build": "bash scripts/build-android.sh",
-    "dev:api": "npm run dev -w @rho/server"
+    "dev:api": "npm run dev -w @rho/server",
+    "releases:restore": "tsx scripts/restore-releases.mts"
   },
   "engines": {
     "node": ">=22.19.0"
