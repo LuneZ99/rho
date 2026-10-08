@@ -20,7 +20,7 @@ import {
 const [apk, notesFile, mode] = process.argv.slice(2);
 if (!apk || !notesFile)
   throw new Error(
-    "用法：tsx scripts/archive-release.ts APK 更新说明.md；需提供 aapt 和 apksigner",
+    "用法：tsx scripts/archive-release.mts APK 更新说明.md；需提供 aapt 和 apksigner",
   );
 const root = resolve(process.env.RHO_DOWNLOADS_DIR ?? "artifacts", "releases");
 await mkdir(root, { recursive: true });
