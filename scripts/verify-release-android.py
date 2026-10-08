@@ -1,6 +1,6 @@
 """在已启动的 rho-android-emulator 上验证发布页；不清除 App 数据。
 使用：python3 scripts/verify-release-android.py [模拟器容器名]
-依赖 docker、Python 标准库，输出 artifacts 截图和 .build 验证结果。
+先完成模拟器 Chrome 的首次启动设置。依赖 docker、Python 标准库，输出 artifacts 截图和 .build 验证结果。
 """
 import json
 import re
@@ -94,6 +94,7 @@ try:
     tap('重试获取版本')
     wait_for('最新发布')
     adb('shell','settings','put','system','font_scale','1.3')
+    time.sleep(4)  # 系统字体变化会重建 Activity，等待重建后再发送导航。
     open_page('settings')
     wait_for('发布版本与下载')
     tap('发布版本与下载')
