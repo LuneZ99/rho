@@ -90,3 +90,5 @@ LiteLLM 沿用上海 GitOps 管理的现有部署，不搬迁服务。经用户�
 - 列表表示代理已配置模型，不代表每个模型健康或支持工具。当前适配仍为 OpenAI chat completions 协议，模型调用异常沿用任务失败提示；不伪装成功或自动换模型。
 - worker 停止宽限为 210 秒，覆盖现有 180 秒任务超时，部署时先检查任务状态，避免中途强杀。
 - rho 的专用 LiteLLM key 使用 `models: ["all-proxy-models"]`，不修改其他 key。管理员一次性运行 `scripts/allow-litellm-models.py`，环境变量提供 `LITELLM_MASTER_KEY`、rho 的 `LITELLM_API_KEY` 和 `LITELLM_BASE_URL`；脚本只输出别名与模型名，凭据不入 Git。权限 API 依据 [LiteLLM Virtual Keys](https://docs.litellm.ai/docs/proxy/virtual_keys)。
+
+对话滚动使用 `onContentSizeChange` 和 `onLayout` 的实际高度计算末尾偏移，在下一帧合并执行；仅用户拖动／惯性滚动改变跟随状态。这样末项间距、输入区和键盘尺寸变化不会沿用旧的近似位置。历史阅读时不主动滚动，待用户点击回到最新。

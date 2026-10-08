@@ -97,6 +97,16 @@
       "name": "模块选择",
       "kind": "custom",
       "description": "复用按钮的两种配色，原生 accessibilityState.selected 与当前模块一致。"
+    },
+    {
+      "name": "对话消息与输入区",
+      "kind": "custom",
+      "description": "原生 FlatList 的左右消息气泡，最大宽度 92%；用户使用 raised、rho 使用 surface；居中日期、气泡内时间。多行输入与圆形发送同排，历史阅读保留位置并提供回到最新。"
+    },
+    {
+      "name": "模型选择列表",
+      "kind": "custom",
+      "description": "原生 FlatList 与搜索输入；单选图标、强调色和 accessibilityState.checked 表达选择。底部保存操作区区分新对话默认值和此对话模型，加载、无匹配、失败与保存结果使用文字反馈。"
     }
   ],
   "narrative": {

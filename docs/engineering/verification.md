@@ -94,3 +94,26 @@
 - 独立界面复核结论为 **ship**，限本次网页扩展；保留原蓝色、MiSans 和指南。检测器两项既有圆角单位 advisory 不构成此次设计变更，不需修改 `DESIGN.md`。
 
 尚未验证真实手机浏览器的系统安装流程，本次不代表用户验收。
+
+## Telegram 风格对话与模型选择（2026-10-08）
+
+依据：[本轮产品要求](../product.md#对话界面与模型选择2026-10-08-确认)。保留原深蓝主题与 MiSans，新增左右气泡、日期与时间、输入框旁发送、历史阅读与回到最新，以及默认／单对话模型设置。
+
+- `npm run typecheck` 通过。独立 `rho_test` 数据库的 12 项后端测试通过，覆盖实时目录变化、鉴权、默认值范围、单对话设置、版本冲突、失效模型、上游故障与任务模型快照。
+- 真实 Pi SDK 配合可控 OpenAI 协议服务，验证两个模型连续调用、工具执行与对话上下文保持；此项不代表真实供应商可用性。
+- 部署后通过真实 LiteLLM，测试对话从 `prod-max-1m` 切换到 `gpt-6.1-sol-medium`，第二轮正确复述第一轮代号，任务均 completed。实测的是这两个模型，不将目录中的全部模型称为逐个验收。
+- 专用 rho key 已开放所有已配置代理模型，实时 `/v1/models` 返回 20 个，和管理员看到的配置名单一致。手机只收到模型名与已选设置；凭据留在服务端。
+- Android 11 / API 30、1080×1920、420 dpi 模拟器，首轮 APK 已检查默认模型保存与恢复、独立会话模型保存、搜索及空结果、键盘下发送控件可达、断网错误及联网刷新、1.3 倍字体。覆盖安装保留原连接及聊天记录。
+- 首轮发现长对话首次打开定位不完整，随后修正：只有用户滚动才改变跟随状态，布局变化不取消跟随；单对话模型刷新同时同步最新会话设置。最终采用内容与视口的实际高度计算偏移，不依赖 FlatList 的近似末项位置。
+
+可重复运行的检查：`scripts/test-server.sh`、`apps/server/test/agent.integration.ts`、`scripts/verify-model-live.py`、`scripts/verify-chat-android.py`、`scripts/verify-chat-scroll.py`（需要 Pillow）。运行日志保存在部署机 `.build/chat-*.log`；公开截图保存在 `artifacts/chat-android11/`。索尼 XQ-AT72 真机尚未验证，以上不代表用户验收；Play Protect 提示按用户要求保持现状。
+
+最终包 `0.3.0-test.261008.3`（Android versionCode 6）重新覆盖安装成功，保留同一签名、连接与历史。真实流式回复测试生成 200 行测试文本：用户滚动到旧消息后，生成前后同一消息区域的像素 SHA-256 完全一致，保持阅读位置；回到最新后末条正文、时间与气泡下沿完整显示，键盘开关、冷启动与 1.3 倍字体也保持末尾。测试任务 `1276de66-a8cd-4a40-b532-246024448cc0` completed；没有请求创建业务记录。
+
+验证工具曾在流式更新时无法取得 UiAutomator idle，误读旧 XML 造成坐标断言失败；保留当时前后截图，改为像素位置比较并继续验证，不重复发送测试消息。大字体导航栏先前截图处在字体重建／深链导航的过渡状态；改由正常设置入口进入并等待稳定，标题与返回完整，系统返回实测回到设置。
+
+截图：[对话](screenshots/chat-models-android11.png)、[键盘下最新回复](screenshots/chat-keyboard-android11.png)、[历史阅读中](screenshots/chat-history-streaming-android11.png)、[回复完成后同一位置](screenshots/chat-history-completed-android11.png)、[模型列表](screenshots/models-android11.png)、[大字体模型页](screenshots/models-large-font-android11.png)。
+
+独立界面复核的 3 项修复评分均为 resolved，disposition 为 **ship**；结论限这三项，不扩展为全产品或真机验收。最终 APK 的公开下载 SHA-256 为 `fd8f24c27462bba13fc53d2f4462dcd2d91afefaf626f5f212acb83afc800751`，与归档清单一致，签名和早期版本一致。网页与 App 发布目录共含 5 个实际留存版本，最终版可从两处下载。
+
+跨机器恢复复验：从 GitHub 下载最终版，在隔离目录运行 `releases:restore`，校验五个版本并恢复最新下载别名，SHA 与清单一致。当前默认模型仍为 `prod-max-1m`，验证期间的临时默认值已经恢复。

@@ -16,7 +16,7 @@ def adb(*args): return subprocess.check_output(BASE + list(args), text=True)
 def nodes():
     adb('shell', 'uiautomator', 'dump', '/sdcard/chat-window.xml')
     return list(ET.fromstring(adb('shell','cat','/sdcard/chat-window.xml')).iter('node'))
-def text(): return '\n'.join(n.get('text','') for n in nodes())
+def text(): return '\n'.join(n.get('text') or n.get('content-desc','') for n in nodes())
 def tap(label):
     snapshot=nodes()
     for attribute in ['content-desc', 'text']:
@@ -53,7 +53,7 @@ try:
     search(current_default);tap(current_default);tap('保存默认模型');wait('当前：'+current_default)
     search('does-not-exist');wait('没有匹配的模型');shot('models-empty')
     search('gpt-6.1');wait('gpt-6.1-sol-medium');shot('models-search')
-    open_page('chat/'+cid);wait('蓝鲸37');time.sleep(2);shot('chat')
+    open_page('chat/'+cid);wait('选择此对话的模型');time.sleep(2);shot('chat')
     tap('选择此对话的模型');wait('此对话的模型')
     target='prod-max-1m' if '当前：prod-lite-1m' in text() else 'prod-lite-1m'
     search(target);tap(target);tap('保存此对话模型');wait('已保存，下一条消息');shot('conversation-model-saved')
