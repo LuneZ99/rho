@@ -83,3 +83,14 @@
 本轮原生自动验证脚本：`python3 scripts/verify-release-android.py`，依赖已启动的模拟器容器和已完成首次初始化的 Chrome。结果存于 `.build/blue-native-results.json`，覆盖安装核对在 `.build/blue-update-results.json`；构建日志、11 项服务端测试日志与原图在构建机的 `.build/` 和 `artifacts/`。
 
 跨机器恢复实测：在当前开发工作区的空 `.build/restore-from-git/` 目录执行 `scripts/restore-releases.mts`，只使用 Git 发布清单和 GitHub Releases，成功恢复 0.1.1、新测试版及 `rho-demo.apk` 最新兼容入口；逐个 SHA-256 一致，不依赖旧机器私钥或旧目录。GitHub 资产服务端摘要也与清单一致。
+
+## 网页历史版本列表（2026-10-08）
+
+现有主页与 `/guide` 在指南前新增发布版本列表，分享入口为 `https://rho.sh.corgi.plus/#releases`；使用与 App 相同的实时清单，本次无需更新 APK。
+
+- 类型检查、独立数据库 11 项服务端测试通过；覆盖网页空列表、两版链接与顺序、说明 HTML 转义及清单损坏后仍保留指南。
+- Chromium 在 1280×900 和 390×844 检查：无横向溢出、无页面脚本错误；版本锚点和校验值展开正常。手机宽度下点击两个下载按钮，实际下载 APK 后核对大小和 SHA-256，均与清单一致。
+- 本地浏览器证据为 `.build/release-web-results.json`、`.impeccable/review/release-web-desktop.png` 与 `release-web-mobile.png`；可用仓库内 `scripts/verify-release-web.py` 重现。
+- 独立界面复核结论为 **ship**，限本次网页扩展；保留原蓝色、MiSans 和指南。检测器两项既有圆角单位 advisory 不构成此次设计变更，不需修改 `DESIGN.md`。
+
+尚未验证真实手机浏览器的系统安装流程，本次不代表用户验收。
