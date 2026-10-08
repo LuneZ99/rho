@@ -5,6 +5,7 @@ import { operationSchema } from "@rho/shared";
 import { pool, entity, DomainError } from "./db.js";
 import { operate } from "./domain.js";
 import { isPublicGuideRequest, registerGuide } from "./guide.js";
+import { isPublicReleaseRequest, registerReleases } from "./releases.js";
 export function createApp(token: string) {
   if (token.length < 32) throw new Error("RHO_ACCESS_TOKEN 至少需要 32 个字符");
   const app = Fastify({
@@ -13,7 +14,11 @@ export function createApp(token: string) {
     disableRequestLogging: true,
   });
   app.addHook("onRequest", async (req, reply) => {
-    if (req.url === "/healthz" || isPublicGuideRequest(req.method, req.url))
+    if (
+      req.url === "/healthz" ||
+      isPublicGuideRequest(req.method, req.url) ||
+      isPublicReleaseRequest(req.method, req.url)
+    )
       return;
     const supplied = Buffer.from(
       req.headers.authorization?.replace(/^Bearer /, "") ?? "",
@@ -46,6 +51,7 @@ export function createApp(token: string) {
     return { ok: true };
   });
   registerGuide(app);
+  registerReleases(app);
   app.post("/v1/operations", async (req) => ({
     entities: await operate(operationSchema.parse(req.body)),
   }));

@@ -39,11 +39,11 @@ const escape = (s: string) =>
 
 export function guideHtml() {
   return `<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101714"><meta name="robots" content="noindex,nofollow"><title>rho · 试用指南</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101823"><meta name="robots" content="noindex,nofollow"><title>rho · 试用指南</title>
 <style>
 @font-face{font-family:MiSans;src:url('/guide/fonts/MiSans-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
 @font-face{font-family:MiSans;src:url('/guide/fonts/MiSans-Medium.woff2') format('woff2');font-weight:500 800;font-display:swap}
-:root{color-scheme:dark;--bg:#101714;--surface:#1A2520;--raised:#23332B;--text:#EDF4EF;--muted:#ABBDB1;--accent:#A8D5BA;--on-accent:#183325;--line:#34453B}
+:root{color-scheme:dark;--bg:#101823;--surface:#1A2738;--raised:#25364D;--text:#EDF3FC;--muted:#ADBDD3;--accent:#A6C8FF;--on-accent:#132F54;--line:#354861}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.75 MiSans,sans-serif;overflow-wrap:anywhere;scrollbar-color:var(--line) var(--bg)}
 main{max-width:760px;margin:auto;padding:40px 24px 64px}h1{font-size:32px;line-height:1.3;margin:0 0 16px;font-weight:500}h2{font-size:24px;line-height:1.4;font-weight:500;margin:0 0 12px}h3{font-size:20px;line-height:1.5;font-weight:500;margin:28px 0 12px}p{margin:12px 0}a{color:var(--accent);text-underline-offset:.22em}a:focus-visible{outline:2px solid var(--accent);outline-offset:5px}a:hover{text-decoration-thickness:2px}a:active{opacity:.7}::selection{background:var(--accent);color:var(--on-accent)}
 .muted,.expected{color:var(--muted)}.actions{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}.button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:10px 20px;border-radius:12px;text-decoration:none;font-weight:500;background:var(--accent);color:var(--on-accent)}.button.secondary{background:var(--raised);color:var(--accent)}.button:hover{filter:brightness(1.08)}

@@ -54,6 +54,11 @@ export default function Settings() {
           secondary
           onPress={() => router.push("/guide")}
         />
+        <Button
+          label="发布版本与下载"
+          secondary
+          onPress={() => router.push("/releases")}
+        />
         <Text title>连接你的 rho</Text>
         <Text muted>
           连接一次后自动保存。服务端负责对话，手机保留离线记录和提醒。

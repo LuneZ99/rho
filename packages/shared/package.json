@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./guide": "./src/guide.ts"
+    "./guide": "./src/guide.ts",
+    "./releases": "./src/releases.ts"
   },
   "scripts": {
     "typecheck": "tsc"

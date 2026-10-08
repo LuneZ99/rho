@@ -41,6 +41,7 @@ export default function Root() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ title: "连接与提醒" }} />
+        <Stack.Screen name="releases" options={{ title: "发布版本" }} />
         <Stack.Screen name="guide/index" options={{ title: "试用指南" }} />
         <Stack.Screen name="guide/[topic]" options={{ title: "试用指南" }} />
         <Stack.Screen name="chat/[id]" options={{ title: "对话" }} />
