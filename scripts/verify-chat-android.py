@@ -18,11 +18,13 @@ def nodes():
     return list(ET.fromstring(adb('shell','cat','/sdcard/chat-window.xml')).iter('node'))
 def text(): return '\n'.join(n.get('text','') for n in nodes())
 def tap(label):
-    for n in nodes():
-        if label in [n.get('text'), n.get('content-desc')]:
-            x1,y1,x2,y2=map(int,re.findall(r'\d+',n.get('bounds')))
-            if x2>x1 and y2>y1:
-                adb('shell','input','tap',str((x1+x2)//2),str((y1+y2)//2));return
+    snapshot=nodes()
+    for attribute in ['content-desc', 'text']:
+        for n in snapshot:
+            if label == n.get(attribute):
+                x1,y1,x2,y2=map(int,re.findall(r'\d+',n.get('bounds')))
+                if x2>x1 and y2>y1:
+                    adb('shell','input','tap',str((x1+x2)//2),str((y1+y2)//2));return
     raise AssertionError('Missing control: '+label)
 def wait(value, seconds=30):
     end=time.monotonic()+seconds
