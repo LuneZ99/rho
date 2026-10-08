@@ -6,6 +6,7 @@ import { pool, entity, DomainError } from "./db.js";
 import { operate } from "./domain.js";
 import { isPublicGuideRequest, registerGuide } from "./guide.js";
 import { isPublicReleaseRequest, registerReleases } from "./releases.js";
+import { modelOptions, setDefaultModel } from "./models.js";
 export function createApp(token: string) {
   if (token.length < 32) throw new Error("RHO_ACCESS_TOKEN 至少需要 32 个字符");
   const app = Fastify({
@@ -50,6 +51,11 @@ export function createApp(token: string) {
     await pool.query("SELECT 1");
     return { ok: true };
   });
+  app.get("/v1/models", async (_req, reply) => {
+    reply.header("Cache-Control", "no-store");
+    return modelOptions();
+  });
+  app.post("/v1/model-settings", async (req) => setDefaultModel(req.body));
   registerGuide(app);
   registerReleases(app);
   app.post("/v1/operations", async (req) => ({

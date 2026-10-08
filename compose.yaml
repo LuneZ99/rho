@@ -47,6 +47,7 @@ services:
       retries: 5
   worker:
     <<: *app
+    stop_grace_period: 210s
     command: [npm, run, worker, -w, '@rho/server']
     volumes: [agent:/data/agent]
 volumes:

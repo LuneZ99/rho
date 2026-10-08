@@ -59,6 +59,11 @@ export default function Settings() {
           secondary
           onPress={() => router.push("/releases")}
         />
+        <Button
+          label="LLM 模型"
+          secondary
+          onPress={() => router.push("/models")}
+        />
         <Text title>连接你的 rho</Text>
         <Text muted>
           连接一次后自动保存。服务端负责对话，手机保留离线记录和提醒。

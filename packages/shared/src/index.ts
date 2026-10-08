@@ -65,13 +65,21 @@ export const reminderSchema = z.object({
   repeat: z.enum(["once", "daily", "weekly"]),
 });
 export type Reminder = z.infer<typeof reminderSchema> & { active: boolean };
-export type Conversation = { title: string };
+export type Conversation = { title: string; modelId?: string };
+export type ModelOptions = {
+  models: string[];
+  defaultModelId: string;
+  legacyModelId: string;
+  version: number;
+};
 export type Message = {
   conversationId: string;
   role: "user" | "assistant";
   text: string;
   state: "pending" | "streaming" | "done" | "failed";
   jobId: string;
+  createdAt?: string;
+  modelId?: string;
 };
 export type Job = {
   conversationId: string;
@@ -82,6 +90,7 @@ export type Job = {
   timezone: string;
   resume?: boolean;
   cardContext?: string;
+  modelId?: string;
 };
 export type Device = {
   installedReminderVersions: Record<string, number>;
@@ -111,6 +120,7 @@ export const operationSchema = z.object({
   id: z.string().uuid(),
   action: z.enum([
     "conversation.create",
+    "conversation.model",
     "message.send",
     "job.resume",
     "item.save",

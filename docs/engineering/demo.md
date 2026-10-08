@@ -79,3 +79,14 @@ LiteLLM 沿用上海 GitOps 管理的现有部署，不搬迁服务。经用户�
 ## 参考
 
 [Pi SDK](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/sdk.md)、[Expo 原生模块](https://docs.expo.dev/modules/get-started/)、[Android 闹钟](https://developer.android.com/develop/background-work/services/alarms)、[LiteLLM 虚拟密钥](https://docs.litellm.ai/docs/proxy/virtual_keys)。
+
+## 模型选择与对话更新（0.3.0）
+
+行为依据：[产品需求：对话界面与模型选择](../product.md#对话界面与模型选择2026-10-08-确认)。
+
+- 手机通过已鉴权的 `GET /v1/models` 实时读取服务端转发的 LiteLLM `/v1/models` 名单；不缓存上游名单，不向手机下发 LiteLLM 凭据。页面进入、手动刷新和保存选择时检查可用性；失败不替换原选择。
+- 默认值保存在 PostgreSQL `preferences`，`POST /v1/model-settings` 按版本校验，避免多个客户端互相覆盖。已有对话迁移时固定为部署默认模型；新对话创建时读取偏好。单个对话通过 `conversation.model` 操作更新，沿用事务、版本和操作审计。
+- 接收消息时把模型写入 job / message 快照。worker 显式向 Pi SDK 传入任务模型，在同一持久 session 上继续对话；任务恢复保留快照，不追随默认值或会话后续变更。
+- 列表表示代理已配置模型，不代表每个模型健康或支持工具。当前适配仍为 OpenAI chat completions 协议，模型调用异常沿用任务失败提示；不伪装成功或自动换模型。
+- worker 停止宽限为 210 秒，覆盖现有 180 秒任务超时，部署时先检查任务状态，避免中途强杀。
+- rho 的专用 LiteLLM key 使用 `models: ["all-proxy-models"]`，不修改其他 key。管理员一次性运行 `scripts/allow-litellm-models.py`，环境变量提供 `LITELLM_MASTER_KEY`、rho 的 `LITELLM_API_KEY` 和 `LITELLM_BASE_URL`；脚本只输出别名与模型名，凭据不入 Git。权限 API 依据 [LiteLLM Virtual Keys](https://docs.litellm.ai/docs/proxy/virtual_keys)。

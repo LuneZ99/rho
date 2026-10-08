@@ -17,6 +17,7 @@ import type {
   Operation,
   SyncResult,
   DataMap,
+  ModelOptions,
 } from "@rho/shared";
 import { Reminders, type ReminderStatus } from "../../modules/rho-reminders";
 export type Pending = Operation & { error?: string };
@@ -29,6 +30,13 @@ type Model = {
   syncing: boolean;
   connection: Connection | null;
   reminders: ReminderStatus | null;
+  loadModels(): Promise<ModelOptions>;
+  saveDefaultModel(modelId: string, version: number): Promise<void>;
+  saveConversationModel(
+    id: string,
+    modelId: string,
+    version: number,
+  ): Promise<void>;
   configure(c: Connection): Promise<void>;
   sync(): Promise<void>;
   submit(
@@ -337,6 +345,26 @@ export function Provider({ children }: { children: React.ReactNode }) {
     },
     [reload, sync],
   );
+  const loadModels = useCallback(
+    (): Promise<ModelOptions> => request("/v1/models"),
+    [request],
+  );
+  const saveDefaultModel = async (modelId: string, version: number) => {
+    await request("/v1/model-settings", { modelId, version });
+  };
+  const saveConversationModel = async (
+    id: string,
+    modelId: string,
+    version: number,
+  ) => {
+    const result = await request("/v1/operations", {
+      id: randomUUID(),
+      action: "conversation.model",
+      payload: { id, modelId, version },
+    });
+    await saveEntities(result.entities);
+    await reload();
+  };
   const configure = async (c: Connection) => {
     c.url = c.url.trim().replace(/\/$/, "");
     c.token = c.token.trim();
@@ -387,6 +415,9 @@ export function Provider({ children }: { children: React.ReactNode }) {
         connection,
         reminders,
         configure,
+        loadModels,
+        saveDefaultModel,
+        saveConversationModel,
         sync,
         submit,
         discard,

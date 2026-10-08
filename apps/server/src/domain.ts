@@ -8,7 +8,12 @@ import {
   type Entity,
   type EntityType,
 } from "@rho/shared";
-import { DomainError, transaction, type Store } from "./db.js";
+import { DomainError, pool, transaction, type Store } from "./db.js";
+import {
+  configuredModel,
+  modelPreference,
+  requireAvailableModel,
+} from "./models.js";
 const ref = z.object({
   id: z.string().uuid(),
   version: z.number().int().nonnegative(),
@@ -27,6 +32,17 @@ export async function operate(
       },
   actor = "user",
 ) {
+  if (op.action === "conversation.model") {
+    const { modelId } = z
+      .object({ modelId: z.string().min(1).max(256) })
+      .parse(op.payload);
+    // A committed retry remains replayable even if the upstream catalog is offline.
+    const previous = await pool.query(
+      "SELECT request=$2::jsonb AS same FROM operations WHERE id=$1",
+      [op.id, JSON.stringify(op)],
+    );
+    if (!previous.rows[0]?.same) await requireAvailableModel(modelId);
+  }
   return transaction(async (s) => {
     const previous = await s.client.query(
       "SELECT request,result FROM operations WHERE id=$1",
@@ -84,7 +100,25 @@ async function apply(
       const v = z
         .object({ id: z.string().uuid(), title: z.string().min(1).max(100) })
         .parse(p);
-      return [await s.put(v.id, "conversation", { title: v.title })];
+      const preference = await modelPreference(s);
+      return [
+        await s.put(v.id, "conversation", {
+          title: v.title,
+          modelId: preference.defaultModelId,
+        }),
+      ];
+    }
+    case "conversation.model": {
+      const v = ref.extend({ modelId: z.string().min(1).max(256) }).parse(p);
+      const conversation = await s.get(v.id, "conversation");
+      return [
+        await s.put(
+          v.id,
+          "conversation",
+          { ...conversation.data, modelId: v.modelId },
+          v.version,
+        ),
+      ];
     }
     case "message.send": {
       const v = z
@@ -96,7 +130,9 @@ async function apply(
           itemId: z.string().uuid().optional(),
         })
         .parse(p);
-      await s.get(v.conversationId, "conversation");
+      const conversation = await s.get(v.conversationId, "conversation");
+      const modelId = conversation.data.modelId ?? configuredModel();
+      const createdAt = new Date().toISOString();
       let text = v.text;
       if (v.cardId) {
         const c = await s.get(v.cardId, "card");
@@ -115,6 +151,8 @@ async function apply(
           role: "user",
           text: v.text,
           state: "done",
+          createdAt,
+          modelId,
           jobId,
         }),
         await s.put(assistantId, "message", {
@@ -122,6 +160,8 @@ async function apply(
           role: "assistant",
           text: "",
           state: "pending",
+          createdAt,
+          modelId,
           jobId,
         }),
         await s.put(jobId, "job", {
@@ -131,6 +171,7 @@ async function apply(
           status: "queued",
           error: null,
           timezone: v.timezone,
+          modelId,
           ...(v.cardId || v.itemId
             ? { cardContext: text.slice(v.text.length) }
             : {}),

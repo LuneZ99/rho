@@ -15,9 +15,18 @@ export async function migrate() {
     CREATE SEQUENCE IF NOT EXISTS change_seq;
     CREATE INDEX IF NOT EXISTS entities_seq ON entities(seq);
     CREATE INDEX IF NOT EXISTS entities_type ON entities(type) WHERE NOT deleted;
+    CREATE TABLE IF NOT EXISTS preferences (key text PRIMARY KEY, value jsonb NOT NULL, version integer NOT NULL);
     CREATE TABLE IF NOT EXISTS operations (id text PRIMARY KEY, request jsonb NOT NULL, result jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
     CREATE TABLE IF NOT EXISTS audit (id bigserial PRIMARY KEY, actor text NOT NULL, action text NOT NULL, payload jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
   `);
+    for (const c of await s.list("conversation"))
+      if (!c.data.modelId)
+        await s.put(
+          c.id,
+          "conversation",
+          { ...c.data, modelId: process.env.LITELLM_MODEL ?? "prod-max-1m" },
+          c.version,
+        );
   });
 }
 export function entity(row: pg.QueryResultRow): Entity {

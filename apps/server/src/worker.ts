@@ -150,7 +150,8 @@ async function run(job: Entity<"job">) {
     modelsPath: null,
     refreshOnCreate: false,
   });
-  const modelId = process.env.LITELLM_MODEL ?? "prod-max-1m";
+  const modelId =
+    job.data.modelId ?? process.env.LITELLM_MODEL ?? "prod-max-1m";
   modelRuntime.registerProvider("rho", {
     baseUrl: process.env.LITELLM_BASE_URL ?? "https://litellm.sh.corgi.plus/v1",
     api: "openai-completions",

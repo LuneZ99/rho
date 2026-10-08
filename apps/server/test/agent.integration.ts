@@ -25,11 +25,20 @@ await transaction(async (s) => {
 const conversationId = randomUUID(),
   category = `咖啡测试-${randomUUID()}`;
 let requests = 0;
+const calledModels: string[] = [];
 const mock = createServer(async (req, res) => {
+  if (req.url === "/v1/models") {
+    res.setHeader("Content-Type", "application/json");
+    res.end(
+      JSON.stringify({ data: [{ id: "rho-test" }, { id: "rho-test-next" }] }),
+    );
+    return;
+  }
   let body = "";
   for await (const chunk of req) body += chunk;
   const input = JSON.parse(body);
   requests++;
+  calledModels.push(input.model);
   assert.equal(req.url, "/v1/chat/completions");
   assert.ok(
     input.tools.some(
@@ -97,6 +106,9 @@ const child = spawn(process.execPath, ["--import", "tsx", "src/worker.ts"], {
   },
   stdio: ["ignore", "inherit", "inherit"],
 });
+process.env.LITELLM_BASE_URL = `http://127.0.0.1:${port}/v1`;
+process.env.LITELLM_API_KEY = "test-only";
+process.env.LITELLM_MODEL = "rho-test";
 try {
   await operate({
     id: randomUUID(),
@@ -132,6 +144,44 @@ try {
         m.data.text.includes("已记录"),
     ),
   );
+  const conversation = await transaction((s) =>
+    s.get(conversationId, "conversation"),
+  );
+  await operate({
+    id: randomUUID(),
+    action: "conversation.model",
+    payload: {
+      id: conversationId,
+      version: conversation.version,
+      modelId: "rho-test-next",
+    },
+  });
+  const next = await operate({
+    id: randomUUID(),
+    action: "message.send",
+    payload: { conversationId, text: "继续上一轮，不要重复记录" },
+  });
+  const nextJob = next.find((e) => e.type === "job")!;
+  let nextDone = false;
+  for (let n = 0; n < 45; n++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    const j = await transaction((s) => s.get(nextJob.id, "job"));
+    if (j.data.status === "failed") throw new Error(j.data.error!);
+    if (j.data.status === "completed") {
+      nextDone = true;
+      break;
+    }
+  }
+  assert.ok(nextDone);
+  assert.deepEqual(calledModels, ["rho-test", "rho-test", "rho-test-next"]);
+  assert.equal(
+    (await transaction((s) => s.list("item"))).filter(
+      (i) => i.data.category === category,
+    ).length,
+    1,
+    "model switch preserves context and does not repeat tool write",
+  );
+  console.log("PASS: model switch uses new model and preserves SDK context");
   console.log("PASS: Pi SDK → 工具 → PostgreSQL → 持久消息；未开放 shell");
 } finally {
   child.kill("SIGTERM");

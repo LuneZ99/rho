@@ -5,13 +5,16 @@ import {
   KeyboardAvoidingView,
   Keyboard,
   Alert,
+  Pressable,
+  ActivityIndicator,
 } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEntities, useStore } from "../../lib/store";
 import { Text, Input, Button, Status, Empty } from "../../components/ui";
-import { colors, font, space } from "../../theme";
+import { colors, font } from "../../theme";
 export default function Chat() {
   const { id, cardId, itemId, draft } = useLocalSearchParams<{
     id: string;
@@ -34,6 +37,17 @@ export default function Chat() {
   const insets = useSafeAreaInsets(),
     list = useRef<FlatList>(null);
   const headerHeight = useHeaderHeight();
+  const atBottom = useRef(true);
+  const [showLatest, setShowLatest] = useState(false);
+  function latest() {
+    atBottom.current = true;
+    setShowLatest(false);
+    list.current?.scrollToEnd({ animated: false });
+  }
+  useEffect(() => {
+    atBottom.current = true;
+    setShowLatest(false);
+  }, [id]);
   const [keyboardShown, setKeyboardShown] = useState(false);
   useEffect(() => {
     const show = Keyboard.addListener("keyboardDidShow", () =>
@@ -63,6 +77,7 @@ export default function Chat() {
         ...(attached ? { cardId: attached } : {}),
         ...(attachedItem ? { itemId: attachedItem } : {}),
       });
+      latest();
       setInput("");
       setAttached(undefined);
       setAttachedItem(undefined);
@@ -87,23 +102,89 @@ export default function Chat() {
         (turnOrder.get(b.data.jobId) ?? b.seq) ||
       Number(a.data.role === "assistant") - Number(b.data.role === "assistant"),
   );
+  const turnTime = new Map(
+    messages
+      .filter((m) => m.data.role === "user")
+      .map((m) => [m.data.jobId, m.data.createdAt ?? m.updatedAt]),
+  );
+  const timestamp = (m: (typeof messages)[number]) =>
+    m.data.createdAt ?? turnTime.get(m.data.jobId) ?? m.updatedAt;
+  const dateLabel = (value: string) =>
+    new Date(value).toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  const replying = jobs.some((j) =>
+    ["queued", "running"].includes(j.data.status),
+  );
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior="height"
       keyboardVerticalOffset={headerHeight}
     >
-      <Stack.Screen options={{ title: conversation?.data.title ?? "对话" }} />
+      <Stack.Screen
+        options={{
+          title: conversation?.data.title ?? "对话",
+          headerTitle: () => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="选择此对话的模型"
+              onPress={() =>
+                router.push({
+                  pathname: "/models",
+                  params: { conversationId: id },
+                })
+              }
+              style={{ minHeight: 48, justifyContent: "center", maxWidth: 260 }}
+            >
+              <Text numberOfLines={1} style={{ fontFamily: font.medium }}>
+                {conversation?.data.title ?? "对话"}
+              </Text>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+              >
+                <Text
+                  numberOfLines={1}
+                  muted
+                  style={{ fontSize: 12, lineHeight: 18, flexShrink: 1 }}
+                >
+                  {conversation?.data.modelId ?? "同步后选择模型"}
+                </Text>
+                <MaterialIcons
+                  name="expand-more"
+                  size={18}
+                  color={colors.muted}
+                />
+              </View>
+            </Pressable>
+          ),
+        }}
+      />
       <FlatList
         ref={list}
         data={messages}
         keyExtractor={(m) => m.id}
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: space.page, gap: 20 }}
+        contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() =>
-          list.current?.scrollToEnd({ animated: false })
-        }
+        scrollEventThrottle={32}
+        onScroll={({ nativeEvent: e }) => {
+          const bottom =
+            e.contentSize.height -
+              e.layoutMeasurement.height -
+              e.contentOffset.y <
+            80;
+          atBottom.current = bottom;
+          setShowLatest(!bottom);
+        }}
+        onLayout={() => {
+          if (atBottom.current) list.current?.scrollToEnd({ animated: false });
+        }}
+        onContentSizeChange={() => {
+          if (atBottom.current) list.current?.scrollToEnd({ animated: false });
+        }}
         ListHeaderComponent={<Status />}
         ListEmptyComponent={
           s.ready ? (
@@ -113,43 +194,99 @@ export default function Chat() {
             />
           ) : null
         }
-        renderItem={({ item }) => (
-          <View
-            style={{
-              alignSelf: item.data.role === "user" ? "flex-end" : "stretch",
-              maxWidth: item.data.role === "user" ? "92%" : "100%",
-              backgroundColor:
-                item.data.role === "user" ? colors.raised : "transparent",
-              borderRadius: 16,
-              padding: item.data.role === "user" ? 16 : 0,
-              gap: 8,
-            }}
-          >
-            <Text muted style={{ fontSize: 13 }}>
-              {item.data.role === "user" ? "你" : "rho"}
-            </Text>
-            <Text selectable>
-              {messageText(
-                item.data.text ||
-                  (item.data.state === "failed"
-                    ? "这次处理没有完成。"
-                    : item.data.state === "pending"
-                      ? "等待处理…"
-                      : "正在整理…"),
-                item.data.role === "assistant",
-              )}
-            </Text>
-            {item.data.state === "streaming" && (
-              <Text muted style={{ fontSize: 13 }}>
-                正在处理
-              </Text>
+        renderItem={({ item, index }) => (
+          <View style={{ gap: 8 }}>
+            {(index === 0 ||
+              dateLabel(timestamp(messages[index - 1])) !==
+                dateLabel(timestamp(item))) && (
+              <View
+                style={{
+                  alignSelf: "center",
+                  backgroundColor: colors.surface,
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 2,
+                  marginVertical: 12,
+                }}
+              >
+                <Text muted style={{ fontSize: 12 }}>
+                  {dateLabel(timestamp(item))}
+                </Text>
+              </View>
             )}
+            <View
+              style={{
+                alignSelf:
+                  item.data.role === "user" ? "flex-end" : "flex-start",
+                maxWidth: "92%",
+                backgroundColor:
+                  item.data.role === "user" ? colors.raised : colors.surface,
+                borderRadius: 16,
+                borderBottomRightRadius: item.data.role === "user" ? 4 : 16,
+                borderBottomLeftRadius: item.data.role === "assistant" ? 4 : 16,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                gap: 4,
+              }}
+            >
+              <Text selectable>
+                {messageText(
+                  item.data.text ||
+                    (item.data.state === "failed"
+                      ? "这次处理没有完成。"
+                      : item.data.state === "pending"
+                        ? "等待处理…"
+                        : "正在整理…"),
+                  item.data.role === "assistant",
+                )}
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  alignSelf: "flex-end",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Text muted style={{ fontSize: 11, lineHeight: 18 }}>
+                  {item.data.state === "streaming"
+                    ? "正在回复 · "
+                    : item.data.state === "failed"
+                      ? "未完成 · "
+                      : ""}
+                  {new Date(timestamp(item)).toLocaleTimeString("zh-CN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  })}
+                </Text>
+                {item.data.role === "user" && (
+                  <MaterialIcons
+                    name="check"
+                    size={14}
+                    color={colors.muted}
+                    accessibilityLabel="已发送"
+                  />
+                )}
+              </View>
+            </View>
           </View>
         )}
         ListFooterComponent={
           <View style={{ gap: 16 }}>
             {pending.map((p) => (
-              <View key={p.id}>
+              <View
+                key={p.id}
+                style={{
+                  alignSelf: "flex-end",
+                  maxWidth: "92%",
+                  backgroundColor: colors.raised,
+                  borderRadius: 16,
+                  padding: 14,
+                  gap: 4,
+                }}
+              >
                 <Text selectable>{String(p.payload.text)}</Text>
                 <Text muted>{p.error ?? "已保存在手机，等待发送"}</Text>
               </View>
@@ -173,47 +310,101 @@ export default function Chat() {
           </View>
         }
       />
+      {showLatest && (
+        <View
+          style={{
+            alignItems: "flex-end",
+            paddingHorizontal: 16,
+            paddingBottom: 8,
+          }}
+        >
+          <Button label="回到最新" secondary onPress={latest} />
+        </View>
+      )}
       <View
         style={{
-          padding: 16,
-          paddingBottom: keyboardShown ? 16 : Math.max(16, insets.bottom),
+          padding: 12,
+          paddingBottom: keyboardShown ? 12 : Math.max(12, insets.bottom),
           borderTopWidth: 1,
           borderTopColor: colors.line,
           gap: 10,
         }}
       >
+        {replying && (
+          <Text
+            muted
+            accessibilityLiveRegion="polite"
+            style={{ fontSize: 12, lineHeight: 18 }}
+          >
+            rho 正在回复…
+          </Text>
+        )}
         {(attached || attachedItem) && (
-          <View style={{ gap: 4 }}>
-            <Text muted style={{ fontSize: 13 }}>
+          <View style={{ gap: 8, flexDirection: "row", alignItems: "center" }}>
+            <Text muted style={{ fontSize: 13, flex: 1 }}>
               已带入：
               {cards.find((c) => c.id === attached)?.data.title ??
                 items.find((i) => i.id === attachedItem)?.data.title ??
                 "所选内容"}
             </Text>
-            <Button
-              label="移除关联内容"
-              secondary
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="移除关联内容"
               onPress={() => {
                 setAttached(undefined);
                 setAttachedItem(undefined);
               }}
-            />
+              style={{
+                width: 48,
+                height: 48,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <MaterialIcons name="close" size={22} color={colors.muted} />
+            </Pressable>
           </View>
         )}
-        <Input
-          accessibilityLabel="消息内容"
-          placeholder="说说你的想法…"
-          multiline
-          value={input}
-          onChangeText={setInput}
-          style={{ maxHeight: 160 }}
-        />
-        <Button
-          label="发送"
-          loading={sending}
-          disabled={!input.trim() || !s.connection}
-          onPress={() => void send()}
-        />
+        <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8 }}>
+          <Input
+            accessibilityLabel="消息内容"
+            placeholder="消息"
+            multiline
+            value={input}
+            onChangeText={setInput}
+            style={{
+              maxHeight: 160,
+              flex: 1,
+              borderRadius: 24,
+              paddingHorizontal: 18,
+            }}
+          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="发送"
+            accessibilityState={{
+              disabled: !input.trim() || !s.connection || sending,
+              busy: sending,
+            }}
+            disabled={!input.trim() || !s.connection || sending}
+            onPress={() => void send()}
+            style={({ pressed }) => ({
+              width: 52,
+              height: 52,
+              borderRadius: 26,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: colors.accent,
+              opacity: !input.trim() || !s.connection || pressed ? 0.55 : 1,
+            })}
+          >
+            {sending ? (
+              <ActivityIndicator color={colors.onAccent} />
+            ) : (
+              <MaterialIcons name="send" size={24} color={colors.onAccent} />
+            )}
+          </Pressable>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
