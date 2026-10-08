@@ -14,7 +14,7 @@
 代码、版本配置、每版更新说明、构建脚本和公开发布清单全部通过 Git 同步。大型已签名 APK 放在本仓库 GitHub Releases；App 从现有 rho 服务下载，避免手机访问 GitHub 受限。新机器不依赖旧机器的构建缓存、node_modules 或未跟踪脚本。
 
 1. 拉取 Git，安装 Node.js 22.19+、Docker，执行 `npm ci`。
-2. 仅开发、检查或恢复历史下载不需要私钥。恢复安装包运行 `npx tsx scripts/restore-releases.mts`，从 Git 中的 `releases/catalog.json` 下载 GitHub 对应版本资产，逐个核对大小与 SHA-256，再原子更新本地列表。
+2. 仅开发、检查或恢复历史下载不需要私钥。恢复安装包运行 `npx tsx scripts/restore-releases.mts`，从 Git 中的 `releases/catalog.json` 下载 GitHub 对应版本资产，逐个核对大小与 SHA-256，再原子更新本地列表与原指南的最新下载入口。
 3. 构建覆盖更新包时，需从密码管理器或安全备份恢复 `.local/rho-release.keystore` 和 `.local/signing.password`，设置目录权限 700、文件权限 600。这两个文件不能明文进入公开 Git；丢失原签名后无法为现有安装提供普通覆盖更新。构建遇到缺失签名会停止，不自动生成新身份。
 4. 修改 `apps/mobile/app.json` 的显示版本及递增安装编号，在 `releases/<版本>.md` 写更新说明；执行类型检查、相关行为测试，再运行 `npm run android:build`。
 5. 构建脚本先归档旧下载，再生成新 APK。归档从实际 APK 读取包名、版本、签名及 SHA-256；拒绝签名变化、重复编号、修改同版包和非递增的新发布。它保留 `artifacts/releases/rho-<版本>.apk`，最后原子更新 `index.json`。相同包可重复归档，已有旧包可用 `--import` 迁入。

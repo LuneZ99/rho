@@ -11,7 +11,7 @@
 
 ## 接口和数据
 
-业务接口统一使用 `Authorization: Bearer <rho 访问令牌>`；健康检查和下述固定的公开指南地址除外。
+业务接口统一使用 `Authorization: Bearer <rho 访问令牌>`；健康检查、下述固定公开指南地址及[发布下载接口](releases.md#公开接口与边界)除外。
 
 | 接口 | 行为 |
 | --- | --- |
@@ -22,7 +22,7 @@
 
 公开试用指南：`/`、`/guide`、`/guide/`；安装包及校验值：`/downloads/rho-demo.apk`、`/downloads/rho-demo.apk.sha256`；字体和许可位于 `/guide/fonts/` 的固定白名单。仅允许 GET／HEAD 免鉴权，不开放目录浏览或任意文件路径。API 以只读卷读取 `artifacts/`，网页不包含个人凭据或业务记录。
 
-`packages/shared/src/guide.ts` 是 App 与网页的共用指南内容，包含连接说明、具体测试场景与验证范围。手机 `/guide` 和 `/guide/[topic]` 随安装包提供，离线可读；网页版由 API 渲染，更新内容后需重建 API。App 入口在连接设置顶部。
+`packages/shared/src/guide.ts` 是 App 与网页的共用指南内容，包含连接说明、具体测试场景与验证范围。手机 `/guide` 和 `/guide/[topic]` 随安装包提供，离线可读；网页版由 API 渲染，更新内容后需重建 API。App 入口在连接设置顶部。同处新增发布版本入口；版本规则、历史 APK 保留和跨机器恢复见[发布说明](releases.md)。
 
 网页使用 MiSans 的 WOFF2 用字子集，两种字重合计约 100 KB；移动端保留完整字体。修改指南文案后，使用安装了 `fonttools`、`brotli` 的 Python 运行 `scripts/build-guide-fonts.py`，同时更新 `apps/server/public/fonts/`，保留官方许可。
 

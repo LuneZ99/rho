@@ -29,3 +29,5 @@ Android 构建：`npm run android:build`。产物为 `artifacts/rho-demo.apk`；
 首次连接，在“连接与提醒”填写 `https://rho.sh.corgi.plus` 与本机 `.local/手机连接.txt` 中的访问令牌，再点击“验证并保存连接”。保持手机通知开启。公开指南不包含令牌；已安装旧版本时直接覆盖安装，保留连接和本地记录。
 
 带“演示”或“验证”字样的内容是开发检查创建的数据，不代表你的真实生活记录。目标索尼手机仍需按[验证记录](docs/engineering/verification.md)检查锁屏提醒与实际体验。
+
+Android 历史版本、测试版命名、签名迁移与跨机器恢复：[发布说明](docs/engineering/releases.md)。
