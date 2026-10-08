@@ -45,13 +45,17 @@ try:
     adb('shell','settings','put','system','font_scale','1.0');time.sleep(4)
     adb('shell','input','keyevent','KEYCODE_WAKEUP');adb('shell','wm','dismiss-keyguard')
     open_page('settings');tap('LLM 模型');wait('可用模型 ·');shot('models')
-    search('prod-lite');tap('prod-lite-1m');tap('保存默认模型');wait('已保存，之后的新对话');shot('default-model-saved')
-    search('prod-max');tap('prod-max-1m');tap('保存默认模型');wait('当前：prod-max-1m')
+    current_default=next(line.split('：',1)[1] for line in text().splitlines() if line.startswith('当前：'))
+    test_default='prod-lite-1m' if current_default != 'prod-lite-1m' else 'prod-max-1m'
+    search(test_default);tap(test_default);tap('保存默认模型');wait('已保存，之后的新对话');shot('default-model-saved')
+    search(current_default);tap(current_default);tap('保存默认模型');wait('当前：'+current_default)
     search('does-not-exist');wait('没有匹配的模型');shot('models-empty')
     search('gpt-6.1');wait('gpt-6.1-sol-medium');shot('models-search')
     open_page('chat/'+cid);wait('蓝鲸37');time.sleep(2);shot('chat')
-    tap('选择此对话的模型');wait('此对话的模型');search('prod-lite');tap('prod-lite-1m');tap('保存此对话模型');wait('已保存，下一条消息');shot('conversation-model-saved')
-    adb('shell','input','keyevent','4');wait('prod-lite-1m')
+    tap('选择此对话的模型');wait('此对话的模型')
+    target='prod-max-1m' if '当前：prod-lite-1m' in text() else 'prod-lite-1m'
+    search(target);tap(target);tap('保存此对话模型');wait('已保存，下一条消息');shot('conversation-model-saved')
+    adb('shell','input','keyevent','4');wait(target)
     tap('消息内容');adb('shell','input','text','Keyboard%stest');time.sleep(2);shot('chat-keyboard')
     controls=nodes();send=next(n for n in controls if n.get('content-desc')=='发送')
     assert send.get('enabled')=='true'
@@ -64,7 +68,7 @@ try:
     tap('刷新列表');wait('可用模型 ·')
     adb('shell','settings','put','system','font_scale','1.3');time.sleep(4)
     open_page('models');wait('可用模型 ·');shot('models-large-font')
-    open_page('chat/'+cid);wait('prod-lite-1m');shot('chat-large-font')
+    open_page('chat/'+cid);wait(target);shot('chat-large-font')
     print('PASS: real model list, search/empty, per-chat save, keyboard, offline recovery, font 1.3')
 finally:
     adb('shell','settings','put','system','font_scale',original)
