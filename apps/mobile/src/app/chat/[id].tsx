@@ -38,6 +38,7 @@ export default function Chat() {
     list = useRef<FlatList>(null);
   const headerHeight = useHeaderHeight();
   const atBottom = useRef(true);
+  const dragging = useRef(false);
   const [showLatest, setShowLatest] = useState(false);
   function latest() {
     atBottom.current = true;
@@ -170,7 +171,22 @@ export default function Chat() {
         contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
         scrollEventThrottle={32}
+        onScrollBeginDrag={() => {
+          dragging.current = true;
+        }}
+        onScrollEndDrag={() => {
+          dragging.current = false;
+        }}
+        onMomentumScrollBegin={() => {
+          dragging.current = true;
+        }}
+        onMomentumScrollEnd={() => {
+          dragging.current = false;
+        }}
         onScroll={({ nativeEvent: e }) => {
+          // Layout and token updates also emit scroll events. Only a user's
+          // scroll changes follow mode, otherwise initial layout can cancel it.
+          if (!dragging.current) return;
           const bottom =
             e.contentSize.height -
               e.layoutMeasurement.height -

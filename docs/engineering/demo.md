@@ -50,7 +50,7 @@
 
 现有网络链路为 `rho.sh.corgi.plus → tx-pz-v-02 Caddy → Tailscale 100.80.0.189:18870 → rho API`。Caddy 使用独立域名匹配，绕过 9080 的 k3s catch-all。配置片段在 `deploy/rho.caddy`，对应变更同步到相邻 Qortex-Infra 仓库。部署前验证 Caddy 配置并备份原文件，失败恢复原文件。
 
-LiteLLM 沿用上海 GitOps 管理的现有部署，不搬迁服务。经用户授权从现有管理入口创建 `rho-demo` 独立虚拟密钥，仅允许 `prod-max-1m` 模型，写入 Git 忽略的 `.env`；不将管理密钥交给 rho。
+LiteLLM 沿用上海 GitOps 管理的现有部署，不搬迁服务。经用户授权从现有管理入口创建 `rho-demo` 独立虚拟密钥，初始仅允许 `prod-max-1m`，本轮模型选择功能已按用户要求扩展到全部已配置模型（见下文）。凭据写入 Git 忽略的 `.env`；不将管理密钥交给 rho。
 
 - 运行状态：`docker compose ps`。
 - 日志：`docker compose logs --tail=100 api worker`。

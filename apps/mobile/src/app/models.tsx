@@ -38,6 +38,7 @@ export default function Models() {
     setLoading(true);
     setError("");
     try {
+      if (conversationId) await s.sync();
       const result = await s.loadModels();
       if (attempt !== generation.current) return;
       setOptions(result);
@@ -52,7 +53,7 @@ export default function Models() {
     } finally {
       if (attempt === generation.current) setLoading(false);
     }
-  }, [s.loadModels, conversationId]);
+  }, [s.loadModels, s.sync, conversationId]);
   useFocusEffect(
     useCallback(() => {
       void load();

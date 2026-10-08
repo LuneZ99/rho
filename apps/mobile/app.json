@@ -3,12 +3,12 @@
     "name": "rho",
     "slug": "rho",
     "scheme": "rho",
-    "version": "0.3.0-test.261008.1",
+    "version": "0.3.0-test.261008.2",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "android": {
       "package": "plus.corgi.rho",
-      "versionCode": 4,
+      "versionCode": 5,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.SCHEDULE_EXACT_ALARM",
