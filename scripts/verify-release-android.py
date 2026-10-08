@@ -32,6 +32,14 @@ def wait_for(value, limit=25):
         if value in text(): return
         time.sleep(1)
     raise AssertionError('页面未出现：' + value)
+def wait_for_download(version, limit=15):
+    end = time.monotonic()+limit
+    while time.monotonic() < end:
+        activities = adb('shell','dumpsys','activity','activities')
+        if 'com.android.chrome' in activities and 'rho-'+version+'.apk' in activities:
+            return
+        time.sleep(.5)
+    raise AssertionError('浏览器未收到版本下载地址：'+version)
 def shot(name):
     with open('artifacts/'+name+'.png', 'wb') as output:
         subprocess.run(BASE+['exec-out','screencap','-p'], stdout=output, check=True)
@@ -63,9 +71,7 @@ try:
     shot('blue-releases-android11')
     # 点击整张卡片，系统应把准确的版本地址交给浏览器。
     tap('下载 '+version+'，测试版')
-    activities = adb('shell','dumpsys','activity','activities')
-    assert 'com.android.chrome' in activities
-    assert 'rho-'+version+'.apk' in activities
+    wait_for_download(version)
     open_page('releases')
     wait_for('最新发布')
     for _ in range(8):
@@ -74,7 +80,7 @@ try:
     assert '0.1.1' in text()
     shot('blue-history-android11')
     tap('下载 0.1.1，正式版')
-    assert 'rho-0.1.1.apk' in adb('shell','dumpsys','activity','activities')
+    wait_for_download('0.1.1')
     adb('shell','svc','wifi','disable')
     adb('shell','svc','data','disable')
     open_page('settings')
@@ -97,7 +103,7 @@ try:
         if '下载 0.1.1，正式版' in [n.get('content-desc') for n in nodes()]: break
         scroll()
     tap('下载 0.1.1，正式版')
-    assert 'rho-0.1.1.apk' in adb('shell','dumpsys','activity','activities')
+    wait_for_download('0.1.1')
     result = dict(version=version, settingsEntry=True, currentVersion=True,
         newAndOldDownloadIntents=True, offlineErrorAndRetry=True, largeFontDownloadReachable=True)
     Path('.build/blue-native-results.json').write_text(json.dumps(result, ensure_ascii=False, indent=2))
